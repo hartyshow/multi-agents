@@ -10,6 +10,13 @@ public class Position {
         this.posy = posy;
     }
 
+    @Override
+    public boolean equals(Object object) {
+        Position position = (Position) object;
+
+        return (posx == position.getPosx() && posy == position.getPosy());
+    }
+
     public int getPosx() {
         return posx;
     }

@@ -1,7 +1,9 @@
 package agent_system;
 
-import environment.Grille;
+import environment.Grid;
 import environment.Position;
+
+import java.util.LinkedList;
 
 public class Agent extends Thread {
 
@@ -10,37 +12,59 @@ public class Agent extends Thread {
 
     private Position currentPosition;
     private Position finalPosition;
-    private Grille grille;
+    private Grid grid;
 
-    public Agent (Grille grille, Position initialPosition) {
+    public Agent (Grid grille, Position initialPosition, Position finalPosition) {
         compteurId++;
         this.id = compteurId;
 
         this.currentPosition = initialPosition;
-        this.grille = grille;
-        this.finalPosition = null;
+        this.grid = grille;
+        this.finalPosition = finalPosition;
 
         MessageBox.getInstance().addAgentMessageBox();
     }
 
-    public void move() {
-
+    public void move(Position position) {
+        this.currentPosition = position;
     }
 
-    public void communicate() {
-
+    public void communicate(Agent receiver, Position advicedPosition) {
+        MessageBox.getInstance().postAgentMessage(new Message(this, receiver, advicedPosition));
     }
 
-    public void lireMessage() {
+    public void treatMessages() {
+        LinkedList<Message> messages = MessageBox.getInstance().getAndRemoveAgentMessages(this);
 
+        // TODO
     }
 
-    public void raisonner() {
+    public void reason() {
 
     }
 
     public void run() {
+        try {
+            int i = 0;
+            while (true) {
+                System.out.println("Agent " + this + " - Tour " + i);
 
+                Thread.sleep(1000);
+                i++;
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public boolean goalReached () {
+        return this.currentPosition.equals(this.finalPosition);
+    }
+
+    @Override
+    public String toString() {
+        return ""+this.id;
     }
 
     public int getAgentId() {
@@ -67,11 +91,11 @@ public class Agent extends Thread {
         this.finalPosition = finalPosition;
     }
 
-    public Grille getGrille() {
-        return grille;
+    public Grid getGrid() {
+        return grid;
     }
 
-    public void setGrille(Grille grille) {
-        this.grille = grille;
+    public void setGrid(Grid grid) {
+        this.grid = grid;
     }
 }

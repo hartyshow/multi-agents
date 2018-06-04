@@ -20,11 +20,18 @@ public class MessageBox {
         messages.add(new LinkedList<>());
     }
 
-    public LinkedList<Message> getAgentMessages (int agentId) {
-        return this.messages.size() >= agentId ? this.messages.get(agentId) : null;
+    public LinkedList<Message> getAndRemoveAgentMessages(Agent agent) {
+        if (this.messages.size() >= agent.getAgentId()) {
+            LinkedList<Message> messages = this.messages.get(agent.getAgentId());
+            this.messages.get(agent.getAgentId()).remove();
+
+            return messages;
+        }
+        else
+            return null;
     }
 
     public void postAgentMessage (Message message) {
-        messages.get(message.getSender().getAgentId()).add(message);
+        messages.get(message.getReceiver().getAgentId()).add(message);
     }
 }
