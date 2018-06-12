@@ -4,8 +4,10 @@ import environment.Grid;
 import environment.Position;
 
 import java.util.LinkedList;
+import java.util.Observable;
+import java.util.Observer;
 
-public class Agent extends Thread {
+public class Agent extends Observable implements Runnable {
 
     private int id;
     public static int compteurId = 0;
@@ -18,15 +20,19 @@ public class Agent extends Thread {
         compteurId++;
         this.id = compteurId;
 
-        this.currentPosition = initialPosition;
+        move(initialPosition);
         this.grid = grille;
         this.finalPosition = finalPosition;
 
         MessageBox.getInstance().addAgentMessageBox();
+
+        addObserver(grid);
     }
 
     public void move(Position position) {
         this.currentPosition = position;
+        setChanged();
+        notifyObservers();
     }
 
     public void communicate(Agent receiver, Position advicedPosition) {
@@ -43,6 +49,7 @@ public class Agent extends Thread {
 
     }
 
+    @Override
     public void run() {
         try {
             int i = 0;

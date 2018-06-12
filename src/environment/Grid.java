@@ -3,8 +3,10 @@ package environment;
 import agent_system.Agent;
 
 import java.util.ArrayList;
+import java.util.Observable;
+import java.util.Observer;
 
-public class Grid {
+public class Grid extends Observable implements Observer{
 
     private int width;
     private ArrayList<ArrayList<Agent>> agents;
@@ -65,7 +67,7 @@ public class Grid {
         for (ArrayList<Agent> arrayAgents : agents) {
             for (Agent agent : arrayAgents) {
                 if (agent != null)
-                    agent.start();
+                    new Thread(agent).start();
             }
         }
     }
@@ -84,5 +86,10 @@ public class Grid {
 
     public void setAgents(ArrayList<ArrayList<Agent>> agents) {
         this.agents = agents;
+    }
+
+    @Override
+    public void update(Observable o, Object arg) {
+
     }
 }
