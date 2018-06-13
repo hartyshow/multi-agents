@@ -4,14 +4,20 @@ import environment.Position;
 
 public class Message {
 
+    private int id;
+    private static int id_counter = 0;
+
     private Agent sender;
     private Agent receiver;
-    private Position advicedPosition;
+    private Position desiredPosition;
 
-    public Message(Agent sender, Agent receiver, Position advicedPosition) {
+    public Message(Agent sender, Agent receiver, Position desiredPosition) {
+        this.id = id_counter;
+        id_counter++;
+
         this.sender = sender;
         this.receiver = receiver;
-        this.advicedPosition = advicedPosition;
+        this.desiredPosition = desiredPosition;
     }
 
     public Agent getSender() {
@@ -30,11 +36,19 @@ public class Message {
         this.receiver = receiver;
     }
 
-    public Position getAdvicedPosition() {
-        return advicedPosition;
+    public Position getDesiredPosition() {
+        return desiredPosition;
     }
 
-    public void setAdvicedPosition(Position advicedPosition) {
-        this.advicedPosition = advicedPosition;
+    public void setDesiredPosition(Position desiredPosition) {
+        this.desiredPosition = desiredPosition;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 }

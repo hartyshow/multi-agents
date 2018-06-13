@@ -89,6 +89,17 @@ public class Grid extends Observable implements Observer{
         return null;
     }
 
+    public synchronized Agent getAgentOnPosition (Position position) {
+        for (ArrayList<Agent> arrayAgents : agents) {
+            for (Agent agent : arrayAgents) {
+                if (agent != null && agent.getCurrentPosition().equals(position))
+                    return agent;
+            }
+        }
+
+        return null;
+    }
+
     public int getWidth() {
         return width;
     }

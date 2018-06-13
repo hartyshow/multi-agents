@@ -6,7 +6,7 @@ import java.util.LinkedList;
 public class MessageBox {
 
     public static MessageBox instance = null;
-    public ArrayList<LinkedList<Message>> messages;
+    public ArrayList<Message> messages;
 
     private MessageBox () {
         this.messages = new ArrayList<>();
@@ -16,22 +16,29 @@ public class MessageBox {
         return instance == null ? new MessageBox() : instance;
     }
 
-    public void addAgentMessageBox () {
-        messages.add(new LinkedList<>());
+    public ArrayList<Message> getAgentMessages(Agent agent) {
+        ArrayList<Message> messages = new ArrayList<>();
+
+        for (Message message : this.messages) {
+            if (message.getReceiver().getAgentId() == agent.getAgentId())
+                messages.add(message);
+        }
+
+        return messages;
     }
 
-    public LinkedList<Message> getAndRemoveAgentMessages(Agent agent) {
-        if (this.messages.size() >= agent.getAgentId()) {
-            LinkedList<Message> messages = this.messages.get(agent.getAgentId());
-            this.messages.get(agent.getAgentId()).remove();
-
-            return messages;
+    public void deleteMessage (int messageId) {
+        int i = 0;
+        for (Message message : this.messages) {
+            if (message.getId() == messageId) {
+                this.messages.remove(i);
+                return;
+            }
+            i++;
         }
-        else
-            return null;
     }
 
     public void postAgentMessage (Message message) {
-        messages.get(message.getReceiver().getAgentId()).add(message);
+        messages.add(message);
     }
 }

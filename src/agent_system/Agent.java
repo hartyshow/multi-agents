@@ -27,16 +27,6 @@ public class Agent extends Observable implements Runnable {
         addObserver(grid);
         move(initialPosition);
         this.finalPosition = finalPosition;
-
-        MessageBox.getInstance().addAgentMessageBox();
-    }
-
-    public void move(Position position) {
-        this.oldPosition = this.currentPosition;
-        this.currentPosition = position;
-
-        setChanged();
-        notifyObservers(this);
     }
 
     public Map<Position,Position> aStar()
@@ -137,18 +127,28 @@ public class Agent extends Observable implements Runnable {
         return neighbors;
     }
 
-    public void communicate(Agent receiver, Position advicedPosition) {
-        MessageBox.getInstance().postAgentMessage(new Message(this, receiver, advicedPosition));
+    public void move(Position position) {
+        this.oldPosition = this.currentPosition;
+        this.currentPosition = position;
+
+        setChanged();
+        notifyObservers(this);
     }
 
-    public void treatMessages() {
-        LinkedList<Message> messages = MessageBox.getInstance().getAndRemoveAgentMessages(this);
-
-        // TODO
+    public void communicate(Agent receiver, Position desiredPosition) {
+        MessageBox.getInstance().postAgentMessage(new Message(this, receiver, desiredPosition));
     }
 
-    public void reason() {
+    public ArrayList<Message> getInboxMessages () {
+        return MessageBox.getInstance().getAgentMessages(this);
+    }
 
+    public void treatMessage(Message message) {
+        if (message.getDesiredPosition().equals(this.getCurrentPosition())) {
+            move(getRandomMovement(this.getCurrentPosition())); // TODO : A* movement
+        }
+
+        MessageBox.getInstance().deleteMessage(message.getId());
     }
 
     @Override
@@ -157,13 +157,29 @@ public class Agent extends Observable implements Runnable {
             Thread.sleep(1000);
 
             while (true) {
-                Position newPosition = getRandomMovement(currentPosition);
+                // On récupère les messages
+                ArrayList<Message> messages = getInboxMessages();
 
+                // On traite les messages un par un puis on les supprime
+                if (messages != null)
+                    for (Message message : messages)
+                        treatMessage(message);
+
+                // On se déplace pour atteindre notre but final
+                Position newPosition = getRandomMovement(currentPosition); // TODO : A* movement
+
+                // Si la case est libre, on s'y déplacer
                 if (this.grid.isPositionAvailable(newPosition))
                     move(newPosition);
+                // Sinon, on demande à l'agent sur la case de se déplacer
+                else {
+                    Agent agent = grid.getAgentOnPosition(newPosition);
 
-                if (this.getAgentId() == 4)
-                    System.out.println("Agent " + this.getAgentId() + " - oldPosition : " + oldPosition + " - newPosition : " + currentPosition + " / butAtteint ? " + this.getCurrentPosition().equals(this.getFinalPosition()));
+                    if (agent != null)
+                        communicate(agent, newPosition);
+                }
+
+                //System.out.println("Agent " + this.getAgentId() + " - oldPosition : " + oldPosition + " - newPosition : " + currentPosition + " / butAtteint ? " + this.getCurrentPosition().equals(this.getFinalPosition()));
 
                 if (this.getCurrentPosition().equals(this.getFinalPosition()))
                     break;
@@ -179,45 +195,33 @@ public class Agent extends Observable implements Runnable {
     public Position getRandomMovement (Position currentPosition) {
         try {
             Random rand = new Random();
-            int x = 0;
-            int y = 0;
-            int chance = rand.nextInt(2);
+            int x,y;
+            int chance = rand.nextInt(5);
+            Position nextPosition;
 
-            int rand1 = rand.nextInt(3) - 1;
-            int rand2 = rand.nextInt(3) - 1;
-            int rand3 = rand.nextInt(3) - 1;
-            int rand4 = rand.nextInt(3) - 1;
-
-            // Je bouge le x puis le y
-            if (chance == 0) {
-                if (currentPosition.getPosx() + rand1 > grid.getWidth() || currentPosition.getPosx() + rand1 < 0)
-                    x = currentPosition.getPosx();
-                else
-                    x = currentPosition.getPosx() + rand1;
-
-                if (x == currentPosition.getPosx()) {
-                    if (currentPosition.getPosy() + rand2 > grid.getWidth() || currentPosition.getPosy() + rand2 < 0)
-                        y = currentPosition.getPosy();
-                    else
-                        y = currentPosition.getPosy() + rand2;
-                }
-            }
-            // Je bouge le y puis le x
-            else {
-                if (currentPosition.getPosy() + rand3 > grid.getWidth() || currentPosition.getPosy() + rand3 < 0)
+            do {
+                if (chance == 0) {
+                    x = currentPosition.getPosx() + 1 > grid.getWidth() ? currentPosition.getPosx() : currentPosition.getPosx() + 1;
                     y = currentPosition.getPosy();
-                else
-                    y = currentPosition.getPosy() + rand3;
-
-                if (y == currentPosition.getPosy()) {
-                    if (currentPosition.getPosx() + rand4 > grid.getWidth() || currentPosition.getPosx() + rand4 < 0)
-                        x = currentPosition.getPosx();
-                    else
-                        x = currentPosition.getPosx() + rand4;
                 }
-            }
+                else if (chance == 1) {
+                    x = currentPosition.getPosx() - 1 > grid.getWidth() ? currentPosition.getPosx() : currentPosition.getPosx() - 1;
+                    y = currentPosition.getPosy();
+                }
+                else if (chance == 2) {
+                    x = currentPosition.getPosx();
+                    y = currentPosition.getPosy() + 1 > grid.getWidth() ? currentPosition.getPosy() : currentPosition.getPosy() + 1;
+                }
+                else {
+                    x = currentPosition.getPosx();
+                    y = currentPosition.getPosy() - 1 > grid.getWidth() ? currentPosition.getPosy() : currentPosition.getPosy() - 1;
+                }
 
-            return new Position(x, y);
+                nextPosition = new Position(x, y);
+            }
+            while (nextPosition.equals(currentPosition));
+
+            return nextPosition;
         }
         catch (Exception e) {
             e.printStackTrace();
