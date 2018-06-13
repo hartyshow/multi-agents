@@ -20,6 +20,14 @@ public class Position {
         return (posx == position.getPosx() && posy == position.getPosy());
     }
 
+    @Override
+    public String toString() {
+        return "Position{" +
+                "posx=" + posx +
+                ", posy=" + posy +
+                '}';
+    }
+
     public Double getCost() {
         return cost;
     }
