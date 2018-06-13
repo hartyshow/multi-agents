@@ -4,6 +4,9 @@ public class Position {
 
     private int posx;
     private int posy;
+    private Double cost = 0.0;
+
+    private Double priority = 0.0;
 
     public Position(int posx, int posy) {
         this.posx = posx;
@@ -17,12 +20,12 @@ public class Position {
         return (posx == position.getPosx() && posy == position.getPosy());
     }
 
-    @Override
-    public String toString() {
-        return "Position{" +
-                "posx=" + posx +
-                ", posy=" + posy +
-                '}';
+    public Double getCost() {
+        return cost;
+    }
+
+    public void setCost(Double cost) {
+        this.cost = cost;
     }
 
     public int getPosx() {
@@ -40,4 +43,14 @@ public class Position {
     public void setPosy(int posy) {
         this.posy = posy;
     }
+
+
+    public Double getPriority() {
+        return priority;
+    }
+
+    public void setPriority(Double priority) {
+        this.priority = priority;
+    }
+
 }
