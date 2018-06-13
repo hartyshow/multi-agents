@@ -6,110 +6,86 @@ import environment.Position;
 import javafx.application.Application;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
+import javafx.collections.ObservableList;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
-import java.util.ArrayList;
-import java.util.Observable;
-import java.util.Observer;
-import java.util.Random;
+import java.util.*;
 
 public class Main extends Application implements Observer {
 
     private Grid grid;
+    private GridPane gridPane;
     private StackPane root;
 
     @Override
     public void start(Stage primaryStage) throws Exception{
-        //Parent root = FXMLLoader.load(getClass().getResource("sample.fxml"));
         primaryStage.setTitle("Hello World");
 
-        createEnvironment(5, 4);
-        printEnvironment();
+        this.grid = new Grid(5, this);
 
-        //launchSimulation();
+        // Création de la grille
+        this.gridPane = createGrid();
 
-        int numCols = 5 ;
-
-        BooleanProperty[][] switches = new BooleanProperty[numCols][numCols];
-        for (int x = 0 ; x < numCols ; x++) {
-            for (int y = 0 ; y < numCols ; y++) {
-                switches[x][y] = new SimpleBooleanProperty();
-            }
-        }
-
-        GridPane grid = createGrid(switches);
-
-        grid.setStyle("-fx-background-color: cell-border-color, cell-color ;\n" +
+        gridPane.setStyle("-fx-background-color: cell-border-color, cell-color ;\n" +
                 "    -fx-background-insets: 0, 1 1 0 0 ;\n" +
                 "    -fx-padding: 1 ;");
 
-        root = new StackPane(grid);
+        root = new StackPane(gridPane);
 
         root.setStyle("-fx-padding: 20 ; cell-color: white ; cell-border-color: black ;");
         Scene scene = new Scene(root, 600, 600);
         primaryStage.setScene(scene);
         primaryStage.show();
+
+        createAgents(4);
+        launchSimulation();
     }
 
-    private StackPane createCell(BooleanProperty cellSwitch) {
+    private StackPane createCell() {
 
         StackPane cell = new StackPane();
 
         cell.setStyle("-fx-background-color: cell-border-color, cell-color ;\n" +
-                "    -fx-background-insets: 0, 0 0 1 1 ;");
-
-        //cell.setOnMouseClicked(e -> cellSwitch.set(! cellSwitch.get() ));
+                "    -fx-background-insets: 0, 0 0 1 1 ;\n");
 
         Text circle = new Text();
-
-        //circle.visibleProperty().bind(cellSwitch);
-
         cell.getChildren().add(circle);
         cell.getStyleClass().add("cell");
         return cell;
     }
 
-    private GridPane createGrid(BooleanProperty[][] switches) {
+    private GridPane createGrid() {
+        GridPane gridPane = new GridPane();
 
-        int numCols = switches.length;
-        int numRows = switches[0].length;
-
-        GridPane grid = new GridPane();
-
-        for (int x = 0; x < numCols; x++) {
+        for (int x = 0; x < this.grid.getWidth(); x++) {
             ColumnConstraints cc = new ColumnConstraints();
             cc.setFillWidth(true);
             cc.setHgrow(Priority.ALWAYS);
-            grid.getColumnConstraints().add(cc);
+            gridPane.getColumnConstraints().add(cc);
         }
 
-        for (int y = 0; y < numRows; y++) {
+        for (int y = 0; y < this.grid.getWidth(); y++) {
             RowConstraints rc = new RowConstraints();
             rc.setFillHeight(true);
             rc.setVgrow(Priority.ALWAYS);
-            grid.getRowConstraints().add(rc);
+            gridPane.getRowConstraints().add(rc);
         }
 
-        for (int x = 0; x < numCols; x++) {
-            for (int y = 0; y < numRows; y++) {
-                grid.add(createCell(switches[x][y]), x, y);
+        for (int x = 0; x < this.grid.getWidth(); x++) {
+            for (int y = 0; y < this.grid.getWidth(); y++) {
+                gridPane.add(createCell(), x, y);
             }
         }
 
-        grid.getStyleClass().add("grid");
-        return grid;
+        gridPane.getStyleClass().add("grid");
+        return gridPane;
     }
 
-    private void createEnvironment(int gridWidth, int nbAgent) {
-        this.grid = new Grid(gridWidth);
-
+    private void createAgents(int nbAgent) {
         Random rand = new Random();
         Position currentPosition;
         Position finalPosition;
@@ -128,13 +104,57 @@ public class Main extends Application implements Observer {
         }
     }
 
-    private void printEnvironment() {
+    private void printEnvironmentInConsole() {
         for (ArrayList<Agent> agents : grid.getAgents()) {
             for (Agent agent : agents) {
-                System.out.print(agent == null ? " 0 " : " "+agent+" ");
+                System.out.print(agent == null ? " 0 " : " "+agent.getAgentId()+" ");
             }
             System.out.println("");
         }
+    }
+
+    private synchronized String getEnvironmentString () {
+        try {
+            List<String> environment = new ArrayList<>();
+            for (int i = 0; i < grid.getWidth(); i++) {
+                for (int j = 0; j < grid.getWidth(); j++) {
+                    environment.add("0");
+                }
+            }
+
+            for (ArrayList<Agent> agents : grid.getAgents()) {
+                for (Agent agent : agents) {
+                    if (agent != null)
+                        environment.set(agent.getCurrentPosition().getPosy() * (grid.getWidth() - 1) + agent.getCurrentPosition().getPosx(), String.valueOf(agent.getAgentId()));
+                }
+            }
+
+            String environmentString = "";
+            for (String envi : environment) {
+                environmentString += envi + "/";
+            }
+
+            return environmentString.substring(0, environmentString.length() - 1);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+
+            return null;
+        }
+    }
+
+    public synchronized Node getNodeByRowColumnIndex (final int row, final int column, GridPane gridPane) {
+        Node result = null;
+        ObservableList<Node> children = gridPane.getChildren();
+
+        for (Node node : children) {
+            if(GridPane.getRowIndex(node) == row && GridPane.getColumnIndex(node) == column) {
+                result = node;
+                break;
+            }
+        }
+
+        return result;
     }
 
     private void launchSimulation() {
@@ -147,6 +167,62 @@ public class Main extends Application implements Observer {
 
     @Override
     public void update(Observable o, Object arg) {
+        /*Agent agent = (Agent) arg;
 
+        // Je le supprime de son ancienne case
+        if (agent.getOldPosition() != null) {
+            Node agentOldCase = getNodeByRowColumnIndex(agent.getOldPosition().getPosx(), agent.getOldPosition().getPosy(), this.gridPane);
+            agentOldCase.setStyle("-fx-background-color: cell-border-color, cell-color ;\n" +
+                    "    -fx-background-insets: 0, 0 0 1 1 ;\n");
+
+            ObservableList<Node> child = ((StackPane)agentOldCase).getChildren();
+            Text text = (Text)child.get(0);
+            text.setText("");
+        }
+
+        // Je l'ajoute sur sa nouvelle case
+        Node agentNewCase = getNodeByRowColumnIndex(agent.getCurrentPosition().getPosx(), agent.getCurrentPosition().getPosy(), this.gridPane);
+        agentNewCase.setStyle("-fx-background-color: " + agent.getColor() + ";\n");
+
+        ObservableList<Node> child = ((StackPane)agentNewCase).getChildren();
+        Text text = (Text)child.get(0);
+        text.setText(String.valueOf(agent.getAgentId()));*/
+
+        try {
+            final String stringEnvironment = getEnvironmentString();
+            final String[] tabEnvironment = stringEnvironment.split("/");
+            int x = 0;
+            int y = 0;
+
+            for (String caseEnvironment : tabEnvironment) {
+                int caseId = Integer.parseInt(caseEnvironment);
+
+                if (caseId == 0) {
+                    Node voidPosition = getNodeByRowColumnIndex(x, y, this.gridPane);
+                    voidPosition.setStyle("-fx-background-color: cell-border-color, cell-color ;\n" +
+                            "    -fx-background-insets: 0, 0 0 1 1 ;\n");
+
+                    ObservableList<Node> child = ((StackPane) voidPosition).getChildren();
+                    Text text = (Text) child.get(0);
+                    text.setText("");
+                } else {
+                    Node agentPosition = getNodeByRowColumnIndex(x, y, this.gridPane);
+                    agentPosition.setStyle("-fx-background-color: " + grid.getAgentById(caseId).getColor() + ";\n");
+
+                    ObservableList<Node> child = ((StackPane) agentPosition).getChildren();
+                    Text text = (Text) child.get(0);
+                    text.setText("" + caseId);
+                }
+
+                x++;
+                if (x == grid.getWidth()) {
+                    y++;
+                    x = 0;
+                }
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

@@ -1,6 +1,7 @@
 package environment;
 
 import agent_system.Agent;
+import sample.Main;
 
 import java.util.ArrayList;
 import java.util.Observable;
@@ -8,10 +9,13 @@ import java.util.Observer;
 
 public class Grid extends Observable implements Observer{
 
+    private Main main;
     private int width;
     private ArrayList<ArrayList<Agent>> agents;
 
-    public Grid(int width) {
+    public Grid(int width, Main main) {
+        this.main = main;
+
         this.width = width;
         this.agents = new ArrayList<>();
 
@@ -24,6 +28,8 @@ public class Grid extends Observable implements Observer{
         {
             this.agents.add(new ArrayList<>(bidon));
         }
+
+        addObserver(main);
     }
 
     public void addAgent (Agent agent) {
@@ -41,7 +47,7 @@ public class Grid extends Observable implements Observer{
         return true;
     }
 
-    public boolean isPositionAvailable(Position position) {
+    public synchronized boolean isPositionAvailable(Position position) {
         for (ArrayList<Agent> arrayAgents : agents) {
             for (Agent agent : arrayAgents) {
                 if (agent != null && agent.getCurrentPosition().equals(position))
@@ -52,7 +58,7 @@ public class Grid extends Observable implements Observer{
         return true;
     }
 
-    public boolean isFinalPositionAvailable(Position position) {
+    public synchronized boolean isFinalPositionAvailable(Position position) {
         for (ArrayList<Agent> arrayAgents : agents) {
             for (Agent agent : arrayAgents) {
                 if (agent != null && agent.getFinalPosition().equals(position))
@@ -72,6 +78,17 @@ public class Grid extends Observable implements Observer{
         }
     }
 
+    public synchronized Agent getAgentById (int id) {
+        for (ArrayList<Agent> arrayAgents : agents) {
+            for (Agent agent : arrayAgents) {
+                if (agent != null && agent.getAgentId() == id)
+                    return agent;
+            }
+        }
+
+        return null;
+    }
+
     public int getWidth() {
         return width;
     }
@@ -80,7 +97,7 @@ public class Grid extends Observable implements Observer{
         this.width = width;
     }
 
-    public ArrayList<ArrayList<Agent>> getAgents() {
+    public synchronized ArrayList<ArrayList<Agent>> getAgents() {
         return agents;
     }
 
@@ -90,6 +107,7 @@ public class Grid extends Observable implements Observer{
 
     @Override
     public void update(Observable o, Object arg) {
-
+        setChanged();
+        notifyObservers(arg);
     }
 }
