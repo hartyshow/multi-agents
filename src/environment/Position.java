@@ -19,6 +19,12 @@ public class Position {
 
         return (posx == position.getPosx() && posy == position.getPosy());
     }
+    
+    @Override
+    public int hashCode() {
+
+        return Objects.hash(posx, posy);
+    }
 
     @Override
     public String toString() {
