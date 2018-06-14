@@ -100,7 +100,9 @@ public class Main extends Application implements Observer {
                 finalPosition = new Position(rand.nextInt(5), rand.nextInt(5));
             } while (!this.grid.isFinalPositionAvailable(finalPosition) && !finalPosition.equals(currentPosition));
 
-            this.grid.addAgent(new Agent(this.grid, currentPosition, finalPosition));
+            Agent newAgent = new Agent(this.grid, currentPosition, finalPosition);
+            
+            this.grid.addAgent(newAgent);
         }
     }
 
@@ -125,7 +127,7 @@ public class Main extends Application implements Observer {
             for (ArrayList<Agent> agents : grid.getAgents()) {
                 for (Agent agent : agents) {
                     if (agent != null)
-                        environment.set(agent.getCurrentPosition().getPosy() * (grid.getWidth() - 1) + agent.getCurrentPosition().getPosx(), String.valueOf(agent.getAgentId()));
+                        environment.set(agent.getCurrentPosition().getPosy() * (grid.getWidth()) + agent.getCurrentPosition().getPosx(), String.valueOf(agent.getAgentId()));
                 }
             }
 
