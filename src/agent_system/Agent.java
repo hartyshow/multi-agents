@@ -20,13 +20,13 @@ public class Agent extends Observable implements Runnable {
         compteurId++;
         this.grid = grille;
         this.id = compteurId;
-
+        this.finalPosition = finalPosition;
         Random rand = new Random();
         this.color = String.format("#%02x%02x%02x", rand.nextInt(250)+5, rand.nextInt(250)+5, rand.nextInt(250)+5);
 
         addObserver(grid);
         move(initialPosition);
-        this.finalPosition = finalPosition;
+        
     }
 
     public Map<Position,Position> aStar()
@@ -42,16 +42,22 @@ public class Agent extends Observable implements Runnable {
         Map<Position,Position> cameFrom = new HashMap<>();
         cameFrom.put(current,current);
 
+        Map<Position, Double> cost_so_far = new HashMap<>();
+        cost_so_far.put(current, 0.0);
+
+        Map<Position, Double> priorities = new HashMap<>();
+        priorities.put(current,0.0);
+
         while(!frontier.isEmpty())
         {
             frontier.sort(new Comparator<Position>() {
                 @Override
                 public int compare(Position o1, Position o2) {
-                    if(o1.getPriority() - o2.getPriority()<0)
+                    if(priorities.get(o1) - priorities.get(o2)<0)
                     {
                         return -1;
                     }
-                    else if (o1.getPriority() - o2.getPriority()<0)
+                    else if (priorities.get(o1) - priorities.get(o2)>0)
                     {
                         return 1;
                     }
@@ -70,12 +76,12 @@ public class Agent extends Observable implements Runnable {
 
             for( Position next : neighbors)
             {
-                Double new_cost = next.getCost() + 1;
-                if(next.getCost() == 0 || new_cost < next.getCost())
+                Double new_cost = cost_so_far.get(current) + 1;
+                if(!cost_so_far.containsKey(next) || new_cost < cost_so_far.get(next))
                 {
-                    next.setCost(new_cost);
+                    cost_so_far.put(next,new_cost);
                     Double priority = new_cost + heuristic(next,goal);
-                    next.setPriority(priority);
+                    priorities.put(next, priority);
                     frontier.add(next);
                     cameFrom.put(next,current);
                 }
@@ -85,23 +91,39 @@ public class Agent extends Observable implements Runnable {
         return cameFrom;
     }
 
-    public List<Position> reconstructPath (Map<Position,Position> came_from, Position start, Position goal)
+    public List<Position> reconstructPath (Map<Position,Position> came_from)
     {
         List<Position> path = new ArrayList<>();
-        Position current = goal;
-        while (current != start) {
+        Position current = this.finalPosition;
+        if(this.finalPosition.equals(this.currentPosition))
+        {
             path.add(current);
-            current = came_from.get(current);
         }
+        else
+        {
+            try
+            {
+                while (!current.equals(this.currentPosition)) {
+                    path.add(current);
+                    current = came_from.get(current);
+                }
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+        }
+
         //path.push_back(start); // optional
-       // std::reverse(path.begin(), path.end());
+        Collections.reverse(path);
         return path;
     }
 
 
     public double heuristic(Position firstPosition, Position secondPosition)
     {
-        return Math.abs(firstPosition.getPosx() - secondPosition.getPosx()) + Math.abs(firstPosition.getPosy()-secondPosition.getPosy());
+        //return Math.abs(firstPosition.getPosx() - secondPosition.getPosx()) + Math.abs(firstPosition.getPosy()-secondPosition.getPosy());
+        return Math.sqrt(Math.pow((double) (firstPosition.getPosx() - secondPosition.getPosx()),2)+Math.pow((double) (firstPosition.getPosy() - secondPosition.getPosy()),2));
     }
 
     public List<Position> getNeighbors(Position position)
@@ -130,7 +152,11 @@ public class Agent extends Observable implements Runnable {
     public void move(Position position) {
         this.oldPosition = this.currentPosition;
         this.currentPosition = position;
-
+        if(oldPosition != null)
+        {
+            grid.getAgents().get(oldPosition.getPosx()).set(oldPosition.getPosy(),null);
+            grid.getAgents().get(currentPosition.getPosx()).set(currentPosition.getPosy(),this);
+        }
         setChanged();
         notifyObservers(this);
     }
@@ -166,8 +192,12 @@ public class Agent extends Observable implements Runnable {
                         treatMessage(message);
 
                 // On se déplace pour atteindre notre but final
-                Position newPosition = getRandomMovement(currentPosition); // TODO : A* movement
-
+                
+                //Position newPosition = getRandomMovement(currentPosition); // TODO : A* movement
+                
+                Map<Position,Position> aStarPositions = aStar();
+                List<Position> path = reconstructPath(aStarPositions);
+                Position newPosition = path.get(0);
                 // Si la case est libre, on s'y déplacer
                 if (this.grid.isPositionAvailable(newPosition))
                     move(newPosition);
