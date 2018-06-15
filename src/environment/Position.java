@@ -1,5 +1,7 @@
 package environment;
 
+import java.util.Objects;
+
 public class Position {
 
     private int posx;
@@ -22,7 +24,6 @@ public class Position {
     
     @Override
     public int hashCode() {
-
         return Objects.hash(posx, posy);
     }
 

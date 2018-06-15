@@ -25,7 +25,7 @@ public class Main extends Application implements Observer {
     public void start(Stage primaryStage) throws Exception{
         primaryStage.setTitle("Hello World");
 
-        this.grid = new Grid(5, this);
+        this.grid = new Grid(10, this);
 
         // Création de la grille
         this.gridPane = createGrid();
@@ -92,12 +92,12 @@ public class Main extends Application implements Observer {
         for (int i = 0; i < nbAgent; i++){
             // Determine current position
             do{
-                currentPosition = new Position(rand.nextInt(5), rand.nextInt(5));
+                currentPosition = new Position(rand.nextInt(grid.getWidth()), rand.nextInt(grid.getWidth()));
             } while (!this.grid.isPositionAvailable(currentPosition));
 
             // Determine final position
             do{
-                finalPosition = new Position(rand.nextInt(5), rand.nextInt(5));
+                finalPosition = new Position(rand.nextInt(grid.getWidth()), rand.nextInt(grid.getWidth()));
             } while (!this.grid.isFinalPositionAvailable(finalPosition) && !finalPosition.equals(currentPosition));
 
             Agent newAgent = new Agent(this.grid, currentPosition, finalPosition);

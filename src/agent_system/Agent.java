@@ -93,30 +93,30 @@ public class Agent extends Observable implements Runnable {
 
     public List<Position> reconstructPath (Map<Position,Position> came_from)
     {
-        List<Position> path = new ArrayList<>();
-        Position current = this.finalPosition;
-        if(this.finalPosition.equals(this.currentPosition))
-        {
-            path.add(current);
-        }
-        else
-        {
-            try
-            {
-                while (!current.equals(this.currentPosition)) {
-                    path.add(current);
-                    current = came_from.get(current);
+        try {
+            List<Position> path = new ArrayList<>();
+            Position current = this.finalPosition;
+            if (this.finalPosition.equals(this.currentPosition)) {
+                path.add(current);
+            } else {
+                try {
+                    while (current != null && !current.equals(this.currentPosition)) {
+                        path.add(current);
+                        current = came_from.get(current);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
-        }
 
-        //path.push_back(start); // optional
-        Collections.reverse(path);
-        return path;
+            //path.push_back(start); // optional
+            Collections.reverse(path);
+            return path;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
 
@@ -141,7 +141,7 @@ public class Agent extends Observable implements Runnable {
         {
             neighbors.add(new Position(position.getPosx(),position.getPosy()-1));
         }
-        if(position.getPosy() != grid.getWidth() && grid.getAgents().get(position.getPosx()).get(position.getPosy()+1) == null)
+        if(position.getPosy() != grid.getWidth()-1 && grid.getAgents().get(position.getPosx()).get(position.getPosy()+1) == null)
         {
             neighbors.add(new Position(position.getPosx(),position.getPosy()+1));
         }
@@ -170,9 +170,8 @@ public class Agent extends Observable implements Runnable {
     }
 
     public void treatMessage(Message message) {
-        if (message.getDesiredPosition().equals(this.getCurrentPosition())) {
-            move(getRandomMovement(this.getCurrentPosition())); // TODO : A* movement
-        }
+        if (message.getDesiredPosition().equals(this.getCurrentPosition()))
+            move(getRandomMovement(this.getCurrentPosition()));
 
         MessageBox.getInstance().deleteMessage(message.getId());
     }
@@ -192,15 +191,14 @@ public class Agent extends Observable implements Runnable {
                         treatMessage(message);
 
                 // On se déplace pour atteindre notre but final
-                
-                //Position newPosition = getRandomMovement(currentPosition); // TODO : A* movement
-                
                 Map<Position,Position> aStarPositions = aStar();
                 List<Position> path = reconstructPath(aStarPositions);
                 Position newPosition = path.get(0);
-                // Si la case est libre, on s'y déplacer
+
+                // Si la case est libre, on s'y déplace
                 if (this.grid.isPositionAvailable(newPosition))
                     move(newPosition);
+
                 // Sinon, on demande à l'agent sur la case de se déplacer
                 else {
                     Agent agent = grid.getAgentOnPosition(newPosition);
@@ -210,6 +208,9 @@ public class Agent extends Observable implements Runnable {
                 }
 
                 //System.out.println("Agent " + this.getAgentId() + " - oldPosition : " + oldPosition + " - newPosition : " + currentPosition + " / butAtteint ? " + this.getCurrentPosition().equals(this.getFinalPosition()));
+
+                if (this.grid.goalReached())
+                    System.out.println("Fini !");
 
                 if (this.getCurrentPosition().equals(this.getFinalPosition()))
                     break;
