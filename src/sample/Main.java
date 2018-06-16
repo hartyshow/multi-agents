@@ -23,7 +23,7 @@ public class Main extends Application implements Observer {
     private StackPane root;
 
     public final int nbAgents = 20;
-    public final int gridWidth = 5;
+    public final int gridWidth = 10;
 
     @Override
     public void start(Stage primaryStage) throws Exception{
@@ -206,7 +206,7 @@ public class Main extends Application implements Observer {
                     } else {
                         Node agentPosition = getNodeByRowColumnIndex(x, y, this.gridPane);
                         if (agent != null) {
-                            System.out.println("agent : " + (agent == null) + " / agent.getGrid() : " + (agent.getGrid() == null) + " / agent.getGrid().getAgentById(caseId) : " + (agent.getGrid().getAgentById(caseId) == null) + " / agent.getGrid().getAgentById(caseId).getColor() : " + (agent.getGrid().getAgentById(caseId).getColor() == null));
+                            //System.out.println("agent : " + (agent == null) + " / agent.getGrid() : " + (agent.getGrid() == null) + " / agent.getGrid().getAgentById(caseId) : " + (agent.getGrid().getAgentById(caseId) == null) + " / agent.getGrid().getAgentById(caseId).getColor() : " + (agent.getGrid().getAgentById(caseId).getColor() == null));
                             agentPosition.setStyle("-fx-background-color: black, " + agent.getGrid().getAgentById(caseId).getColor() + ";\n" +
                                     "    -fx-background-insets: 0, 0 0 1 1 ;");
 
@@ -224,6 +224,7 @@ public class Main extends Application implements Observer {
                 }
             }
             else {
+                //this.grid.stopSimulation();
                 Platform.runLater(() -> {
                     Alert alert = new Alert(Alert.AlertType.INFORMATION);
                     alert.setTitle("Simulation completed !");

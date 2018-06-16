@@ -81,6 +81,16 @@ public class Grid extends Observable implements Observer{
         }
     }
 
+    public void stopSimulation()
+    {
+        for (ArrayList<Agent> arrayAgents : agents) {
+            for (Agent agent : arrayAgents) {
+                if (agent != null)
+                    agent.stop();
+            }
+        }
+    }
+
     public Agent getAgentById (int id) {
         for (ArrayList<Agent> arrayAgents : agents) {
             for (Agent agent : arrayAgents) {

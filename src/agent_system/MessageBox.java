@@ -18,7 +18,7 @@ public class MessageBox {
         ArrayList<Message> copyMessages = new ArrayList<>(this.messages);
 
         for (Message message : copyMessages) {
-            System.out.println("message : " + (message == null) + " / message.getReceiver() : " + (message.getReceiver() == null));
+            //System.out.println("message : " + (message == null) + " / message.getReceiver() : " + (message.getReceiver() == null));
             if (message.getReceiver().getAgentId() == agentId)
                 messages.add(message);
         }

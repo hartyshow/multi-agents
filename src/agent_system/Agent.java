@@ -17,6 +17,8 @@ public class Agent extends Observable implements Runnable {
     private Grid grid;
     private String color;
 
+    private boolean running = true;
+
     public Agent (Grid grille, Position initialPosition, Position finalPosition) {
         compteurId++;
         this.grid = grille;
@@ -28,6 +30,27 @@ public class Agent extends Observable implements Runnable {
         addObserver(grid);
         move(initialPosition);
         
+    }
+
+    public Position glouton()
+    {
+
+        if(this.currentPosition.equals(this.finalPosition))
+        {
+            return null;
+        }
+
+        List<Position> neighbors = getNeighbors(this.currentPosition);
+
+        neighbors.sort(new Comparator<Position>() {
+            @Override
+            public int compare(Position o1, Position o2) {
+
+                return heuristic(o1,finalPosition)-heuristic(o2,finalPosition);
+            }
+        });
+
+        return neighbors.get(0);
     }
 
     public Map<Position,Position> aStar()
@@ -54,6 +77,7 @@ public class Agent extends Observable implements Runnable {
             frontier.sort(new Comparator<Position>() {
                 @Override
                 public int compare(Position o1, Position o2) {
+
                     if(priorities.get(o1) - priorities.get(o2)<0)
                     {
                         return -1;
@@ -121,28 +145,35 @@ public class Agent extends Observable implements Runnable {
     }
 
 
-    public double heuristic(Position firstPosition, Position secondPosition)
+    public int heuristic(Position firstPosition, Position secondPosition)
     {
-        //return Math.abs(firstPosition.getPosx() - secondPosition.getPosx()) + Math.abs(firstPosition.getPosy()-secondPosition.getPosy());
-        return Math.sqrt(Math.pow((double) (firstPosition.getPosx() - secondPosition.getPosx()),2)+Math.pow((double) (firstPosition.getPosy() - secondPosition.getPosy()),2));
+        // distance de Manathan
+        return Math.abs(firstPosition.getPosx() - secondPosition.getPosx()) + Math.abs(firstPosition.getPosy()-secondPosition.getPosy());
+        // distance euclidienne
+        //return Math.sqrt(Math.pow((double) (firstPosition.getPosx() - secondPosition.getPosx()),2)+Math.pow((double) (firstPosition.getPosy() - secondPosition.getPosy()),2));
+
     }
 
     public List<Position> getNeighbors(Position position)
     {
         List<Position> neighbors = new ArrayList<Position>();
-        if(position.getPosx() != 0 && grid.getAgents().get(position.getPosx()-1).get(position.getPosy()) == null)
+        // && grid.getAgents().get(position.getPosx()-1).get(position.getPosy()) == null
+        if(position.getPosx() != 0)
         {
             neighbors.add(new Position(position.getPosx()-1,position.getPosy()));
         }
-        if(position.getPosx() != grid.getWidth()-1 && grid.getAgents().get(position.getPosx()+1).get(position.getPosy()) == null)
+        // && grid.getAgents().get(position.getPosx()+1).get(position.getPosy()) == null
+        if(position.getPosx() != grid.getWidth()-1)
         {
             neighbors.add(new Position(position.getPosx()+1,position.getPosy()));
         }
-        if(position.getPosy() != 0 && grid.getAgents().get(position.getPosx()).get(position.getPosy()-1) == null)
+        //&& grid.getAgents().get(position.getPosx()).get(position.getPosy()-1) == null
+        if(position.getPosy() != 0 )
         {
             neighbors.add(new Position(position.getPosx(),position.getPosy()-1));
         }
-        if(position.getPosy() != grid.getWidth()-1 && grid.getAgents().get(position.getPosx()).get(position.getPosy()+1) == null)
+        //&& grid.getAgents().get(position.getPosx()).get(position.getPosy()+1) == null
+        if(position.getPosy() != grid.getWidth()-1 )
         {
             neighbors.add(new Position(position.getPosx(),position.getPosy()+1));
         }
@@ -153,11 +184,10 @@ public class Agent extends Observable implements Runnable {
     public void move(Position position) {
         this.oldPosition = this.currentPosition;
         this.currentPosition = position;
-        if (oldPosition != null) {
+        if (oldPosition != null && grid.getAgents().get(oldPosition.getPosx()).get(oldPosition.getPosy()).equals(this)) {
             grid.getAgents().get(oldPosition.getPosx()).set(oldPosition.getPosy(), null);
-            grid.getAgents().get(currentPosition.getPosx()).set(currentPosition.getPosy(), this);
         }
-
+        grid.getAgents().get(currentPosition.getPosx()).set(currentPosition.getPosy(), this);
         setChanged();
         notifyObservers(this);
     }
@@ -182,7 +212,7 @@ public class Agent extends Observable implements Runnable {
         try {
             Thread.sleep(1000);
 
-            while (true) {
+            while (running) {
                 Thread.sleep(500);
 
                 // On récupère les messages
@@ -195,13 +225,13 @@ public class Agent extends Observable implements Runnable {
                         treatMessage(message);
 
                 // On se déplace pour atteindre notre but final
-                Map<Position,Position> aStarPositions = aStar();
-                List<Position> path = reconstructPath(aStarPositions);
-                Position newPosition;
-                // path = null si l'agent est déjà arrivé
-                if(path != null)
+                //Map<Position,Position> aStarPositions = aStar();
+                //List<Position> path = reconstructPath(aStarPositions);
+                Position newPosition = glouton();
+
+                if(newPosition != null)
                 {
-                    newPosition = path.get(0);
+
                     // Si la case est libre, on s'y déplace
                     if (this.grid.isPositionAvailable(newPosition))
                         move(newPosition);
@@ -215,17 +245,24 @@ public class Agent extends Observable implements Runnable {
                     }
                 }
 
+
                 if (this.grid.goalReached()) {
                     System.out.println("Fini !");
 
                     setChanged();
                     notifyObservers("fini");
+                    break;
                 }
             }
         }
         catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void stop()
+    {
+        this.running = false;
     }
 
     public synchronized Position getRandomMovement (Position currentPosition) {
