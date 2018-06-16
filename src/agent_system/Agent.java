@@ -97,7 +97,7 @@ public class Agent extends Observable implements Runnable {
             List<Position> path = new ArrayList<>();
             Position current = this.finalPosition;
             if (this.finalPosition.equals(this.currentPosition)) {
-                path.add(current);
+                return null;
             } else {
                 try {
                     while (current != null && !current.equals(this.currentPosition)) {
@@ -194,28 +194,40 @@ public class Agent extends Observable implements Runnable {
                 // On se déplace pour atteindre notre but final
                 Map<Position,Position> aStarPositions = aStar();
                 List<Position> path = reconstructPath(aStarPositions);
-                Position newPosition = path.get(0);
+                Position newPosition;
+                // path = null si l'agent est déjà arrivé
+                if(path != null)
+                {
+                    newPosition = path.get(0);
+                    // Si la case est libre, on s'y déplace
+                    if (this.grid.isPositionAvailable(newPosition))
+                        move(newPosition);
 
-                // Si la case est libre, on s'y déplace
-                if (this.grid.isPositionAvailable(newPosition))
-                    move(newPosition);
+                        // Sinon, on demande à l'agent sur la case de se déplacer
+                    else {
+                        Agent agent = grid.getAgentOnPosition(newPosition);
 
-                // Sinon, on demande à l'agent sur la case de se déplacer
-                else {
-                    Agent agent = grid.getAgentOnPosition(newPosition);
-
-                    if (agent != null)
-                        communicate(agent, newPosition);
+                        if (agent != null)
+                            communicate(agent, newPosition);
+                    }
                 }
+
+
+
+
 
                 //System.out.println("Agent " + this.getAgentId() + " - oldPosition : " + oldPosition + " - newPosition : " + currentPosition + " / butAtteint ? " + this.getCurrentPosition().equals(this.getFinalPosition()));
 
                 if (this.grid.goalReached())
+                {
                     System.out.println("Fini !");
-
-                if (this.getCurrentPosition().equals(this.getFinalPosition()))
                     break;
+                }
 
+
+
+                //if (this.getCurrentPosition().equals(this.getFinalPosition()))
+                    //break;
                 Thread.sleep(500);
             }
         }

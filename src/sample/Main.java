@@ -23,7 +23,7 @@ public class Main extends Application implements Observer {
     public void start(Stage primaryStage) throws Exception{
         primaryStage.setTitle("Hello World");
 
-        this.grid = new Grid(5, this);
+        this.grid = new Grid(3, this);
 
         // Création de la grille
         this.gridPane = createGrid();
@@ -39,7 +39,7 @@ public class Main extends Application implements Observer {
         primaryStage.setScene(scene);
         primaryStage.show();
 
-        createAgents(24);
+        createAgents(3);
         launchSimulation();
     }
 
@@ -142,6 +142,7 @@ public class Main extends Application implements Observer {
             return null;
         }
     }
+
 
     public synchronized Node getNodeByRowColumnIndex (final int row, final int column, GridPane gridPane) {
         Node result = null;
