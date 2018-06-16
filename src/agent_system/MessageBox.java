@@ -6,21 +6,20 @@ import java.util.LinkedList;
 public class MessageBox {
 
     public static MessageBox instance = null;
-    public ArrayList<Message> messages;
-
-    private MessageBox () {
-        this.messages = new ArrayList<>();
-    }
+    public final static ArrayList<Message> messages = new ArrayList<>();
+    private final Object lock = new Object();
 
     public static MessageBox getInstance() {
         return instance == null ? new MessageBox() : instance;
     }
 
-    public ArrayList<Message> getAgentMessages(Agent agent) {
+    public ArrayList<Message> getAgentMessages(int agentId) {
         ArrayList<Message> messages = new ArrayList<>();
+        ArrayList<Message> copyMessages = new ArrayList<>(this.messages);
 
-        for (Message message : this.messages) {
-            if (message.getReceiver().getAgentId() == agent.getAgentId())
+        for (Message message : copyMessages) {
+            System.out.println("message : " + (message == null) + " / message.getReceiver() : " + (message.getReceiver() == null));
+            if (message.getReceiver().getAgentId() == agentId)
                 messages.add(message);
         }
 

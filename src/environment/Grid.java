@@ -81,7 +81,7 @@ public class Grid extends Observable implements Observer{
         }
     }
 
-    public synchronized Agent getAgentById (int id) {
+    public Agent getAgentById (int id) {
         for (ArrayList<Agent> arrayAgents : agents) {
             for (Agent agent : arrayAgents) {
                 if (agent != null && agent.getAgentId() == id)

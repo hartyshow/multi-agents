@@ -2,6 +2,7 @@ package agent_system;
 
 import environment.Grid;
 import environment.Position;
+import javafx.scene.control.Alert;
 
 import java.util.*;
 
@@ -152,8 +153,7 @@ public class Agent extends Observable implements Runnable {
     public void move(Position position) {
         this.oldPosition = this.currentPosition;
         this.currentPosition = position;
-        if(oldPosition != null)
-        {
+        if (oldPosition != null) {
             grid.getAgents().get(oldPosition.getPosx()).set(oldPosition.getPosy(), null);
             grid.getAgents().get(currentPosition.getPosx()).set(currentPosition.getPosy(), this);
         }
@@ -167,7 +167,7 @@ public class Agent extends Observable implements Runnable {
     }
 
     public ArrayList<Message> getInboxMessages () {
-        return MessageBox.getInstance().getAgentMessages(this);
+        return MessageBox.getInstance().getAgentMessages(this.getAgentId());
     }
 
     public void treatMessage(Message message) {
@@ -183,8 +183,11 @@ public class Agent extends Observable implements Runnable {
             Thread.sleep(1000);
 
             while (true) {
+                Thread.sleep(500);
+
                 // On récupère les messages
-                ArrayList<Message> messages = getInboxMessages();
+                ArrayList<Message> messages = new ArrayList<>();
+                messages = getInboxMessages();
 
                 // On traite les messages un par un puis on les supprime
                 if (messages != null)
@@ -212,23 +215,12 @@ public class Agent extends Observable implements Runnable {
                     }
                 }
 
-
-
-
-
-                //System.out.println("Agent " + this.getAgentId() + " - oldPosition : " + oldPosition + " - newPosition : " + currentPosition + " / butAtteint ? " + this.getCurrentPosition().equals(this.getFinalPosition()));
-
-                if (this.grid.goalReached())
-                {
+                if (this.grid.goalReached()) {
                     System.out.println("Fini !");
-                    break;
+
+                    setChanged();
+                    notifyObservers("fini");
                 }
-
-
-
-                //if (this.getCurrentPosition().equals(this.getFinalPosition()))
-                    //break;
-                Thread.sleep(500);
             }
         }
         catch (Exception e) {
@@ -236,44 +228,37 @@ public class Agent extends Observable implements Runnable {
         }
     }
 
-    public Position getRandomMovement (Position currentPosition) {
-        try {
-            Random rand = new Random();
-            int x,y;
-            int chance = rand.nextInt(5);
-            Position nextPosition;
+    public synchronized Position getRandomMovement (Position currentPosition) {
+        Random rand = new Random();
+        int x,y;
+        int chance = rand.nextInt(5);
+        Position nextPosition;
 
-            do {
-                if (chance == 0) {
-                    x = currentPosition.getPosx() + 1 > grid.getWidth() ? currentPosition.getPosx() : currentPosition.getPosx() + 1;
-                    y = currentPosition.getPosy();
-                }
-                else if (chance == 1) {
-                    x = currentPosition.getPosx() - 1 > grid.getWidth() ? currentPosition.getPosx() : currentPosition.getPosx() - 1;
-                    y = currentPosition.getPosy();
-                }
-                else if (chance == 2) {
-                    x = currentPosition.getPosx();
-                    y = currentPosition.getPosy() + 1 > grid.getWidth() ? currentPosition.getPosy() : currentPosition.getPosy() + 1;
-                }
-                else {
-                    x = currentPosition.getPosx();
-                    y = currentPosition.getPosy() - 1 > grid.getWidth() ? currentPosition.getPosy() : currentPosition.getPosy() - 1;
-                }
-
-                nextPosition = new Position(x, y);
+        do {
+            if (chance == 0) {
+                x = currentPosition.getPosx() + 1 > grid.getWidth()-1 ? currentPosition.getPosx() : currentPosition.getPosx() + 1;
+                y = currentPosition.getPosy();
             }
-            while (nextPosition.equals(currentPosition) && !this.getGrid().isPositionAvailable(nextPosition));
+            else if (chance == 1) {
+                x = currentPosition.getPosx() - 1 < 0 ? currentPosition.getPosx() : currentPosition.getPosx() - 1;
+                y = currentPosition.getPosy();
+            }
+            else if (chance == 2) {
+                x = currentPosition.getPosx();
+                y = currentPosition.getPosy() + 1 > grid.getWidth()-1 ? currentPosition.getPosy() : currentPosition.getPosy() + 1;
+            }
+            else {
+                x = currentPosition.getPosx();
+                y = currentPosition.getPosy() - 1 < 0 ? currentPosition.getPosy() : currentPosition.getPosy() - 1;
+            }
 
-            System.out.println("current : " + currentPosition + " / nextPosition : " + nextPosition);
-
-            return nextPosition;
+            nextPosition = new Position(x, y);
         }
-        catch (Exception e) {
-            e.printStackTrace();
+        while (nextPosition.equals(currentPosition) && !this.getGrid().isPositionAvailable(nextPosition));
 
-            return null;
-        }
+        System.out.println("current : " + currentPosition + " / nextPosition : " + nextPosition);
+
+        return nextPosition;
     }
 
     public boolean goalReached () {
