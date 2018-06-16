@@ -4,9 +4,12 @@ import agent_system.Agent;
 import environment.Grid;
 import environment.Position;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.layout.*;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
@@ -19,11 +22,14 @@ public class Main extends Application implements Observer {
     private GridPane gridPane;
     private StackPane root;
 
+    public final int nbAgents = 20;
+    public final int gridWidth = 5;
+
     @Override
     public void start(Stage primaryStage) throws Exception{
         primaryStage.setTitle("Hello World");
 
-        this.grid = new Grid(5, this);
+        this.grid = new Grid(gridWidth, this);
 
         // Création de la grille
         this.gridPane = createGrid();
@@ -39,7 +45,7 @@ public class Main extends Application implements Observer {
         primaryStage.setScene(scene);
         primaryStage.show();
 
-        createAgents(24);
+        createAgents(nbAgents);
         launchSimulation();
     }
 
@@ -143,7 +149,7 @@ public class Main extends Application implements Observer {
         }
     }
 
-    public synchronized Node getNodeByRowColumnIndex (final int row, final int column, GridPane gridPane) {
+    public Node getNodeByRowColumnIndex (final int row, final int column, GridPane gridPane) {
         Node result = null;
         ObservableList<Node> children = gridPane.getChildren();
 
@@ -168,61 +174,70 @@ public class Main extends Application implements Observer {
     @Override
     public void update(Observable o, Object arg) {
         try {
-            /*Agent agent = (Agent) arg;
-            final String stringEnvironment = getEnvironmentString(agent.getGrid());
-            final String[] tabEnvironment = stringEnvironment.split("/");
-            int x = 0;
-            int y = 0;
+            if (arg instanceof Agent) {
+                Agent agent = (Agent) arg;
 
-            for (int k = 0; k < this.grid.getWidth(); k++) {
-                for (int l = 0; l < this.grid.getWidth(); l++) {
-                    Node voidPosition = getNodeByRowColumnIndex(k, l, this.gridPane);
-                    voidPosition.setStyle("-fx-background-color: cell-border-color, cell-color ;\n" +
+                /*if (agent.getOldPosition() != null) {
+                    Node voidPosition = getNodeByRowColumnIndex(agent.getOldPosition().getPosx(), agent.getOldPosition().getPosy(), this.gridPane);
+                    voidPosition.setStyle("-fx-background-color: black, white ;\n" +
                             "    -fx-background-insets: 0, 0 0 1 1 ;\n");
 
                     ObservableList<Node> child = ((StackPane) voidPosition).getChildren();
                     Text text = (Text) child.get(0);
                     text.setText(" ");
+                }*/
+
+                final String stringEnvironment = getEnvironmentString(agent.getGrid());
+                final String[] tabEnvironment = stringEnvironment.split("/");
+                int x = 0;
+                int y = 0;
+
+                for (String caseEnvironment : tabEnvironment) {
+                    int caseId = Integer.parseInt(caseEnvironment);
+
+                    if (caseId == 0) {
+                        Node voidPosition = getNodeByRowColumnIndex(x, y, this.gridPane);
+                        voidPosition.setStyle("-fx-background-color: black, white ;\n" +
+                                "    -fx-background-insets: 0, 0 0 1 1 ;");
+
+                        ObservableList<Node> child = ((StackPane) voidPosition).getChildren();
+                        Text text = (Text) child.get(0);
+                        text.setText(" ");
+                    } else {
+                        Node agentPosition = getNodeByRowColumnIndex(x, y, this.gridPane);
+                        if (agent != null) {
+                            System.out.println("agent : " + (agent == null) + " / agent.getGrid() : " + (agent.getGrid() == null) + " / agent.getGrid().getAgentById(caseId) : " + (agent.getGrid().getAgentById(caseId) == null) + " / agent.getGrid().getAgentById(caseId).getColor() : " + (agent.getGrid().getAgentById(caseId).getColor() == null));
+                            agentPosition.setStyle("-fx-background-color: black, " + agent.getGrid().getAgentById(caseId).getColor() + ";\n" +
+                                    "    -fx-background-insets: 0, 0 0 1 1 ;");
+
+                            ObservableList<Node> child = ((StackPane) agentPosition).getChildren();
+                            Text text = (Text) child.get(0);
+                            text.setText("" + caseId);
+                        }
+                    }
+
+                    x++;
+                    if (x == grid.getWidth()) {
+                        y++;
+                        x = 0;
+                    }
                 }
             }
+            else {
+                Platform.runLater(() -> {
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("Simulation completed !");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Simulation successfully completed !");
 
-            for (String caseEnvironment : tabEnvironment) {
-                int caseId = Integer.parseInt(caseEnvironment);
+                    Optional<ButtonType> option = alert.showAndWait();
 
-                if (caseId != 0) {
-                    Node agentPosition = getNodeByRowColumnIndex(x, y, this.gridPane);
-                    agentPosition.setStyle("-fx-background-color: " + grid.getAgentById(caseId).getColor() + ";\n");
-
-                    ObservableList<Node> child = ((StackPane) agentPosition).getChildren();
-                    Text text = (Text) child.get(0);
-                    text.setText("" + caseId);
-                }
-
-                x++;
-                if (x == grid.getWidth()) {
-                    y++;
-                    x = 0;
-                }
-            }*/
-
-            Agent agent = (Agent) arg;
-
-            if (agent.getOldPosition() != null) {
-                Node voidPosition = getNodeByRowColumnIndex(agent.getOldPosition().getPosx(), agent.getOldPosition().getPosy(), this.gridPane);
-                voidPosition.setStyle("-fx-background-color: cell-border-color, cell-color ;\n" +
-                        "    -fx-background-insets: 0, 0 0 1 1 ;\n");
-
-                ObservableList<Node> child = ((StackPane) voidPosition).getChildren();
-                Text text = (Text) child.get(0);
-                text.setText(" ");
+                    if (option.get() == ButtonType.OK) {
+                        Platform.exit();
+                        System.exit(0);
+                    }
+                });
             }
-
-            Node agentPosition = getNodeByRowColumnIndex(agent.getCurrentPosition().getPosx(), agent.getCurrentPosition().getPosy(), this.gridPane);
-            agentPosition.setStyle("-fx-background-color: " + agent.getColor() + ";\n");
-
-            ObservableList<Node> child2 = ((StackPane) agentPosition).getChildren();
-            Text text2 = (Text) child2.get(0);
-            text2.setText("" + agent.getAgentId());
         }
         catch (Exception e) {
             e.printStackTrace();
