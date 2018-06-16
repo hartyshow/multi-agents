@@ -34,6 +34,9 @@ public class Grid extends Observable implements Observer{
 
     public void addAgent (Agent agent) {
         agents.get(agent.getCurrentPosition().getPosx()).set(agent.getCurrentPosition().getPosy(), agent);
+
+        setChanged();
+        notifyObservers(agent);
     }
 
     public boolean goalReached () {

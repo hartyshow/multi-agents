@@ -154,9 +154,10 @@ public class Agent extends Observable implements Runnable {
         this.currentPosition = position;
         if(oldPosition != null)
         {
-            grid.getAgents().get(oldPosition.getPosx()).set(oldPosition.getPosy(),null);
-            grid.getAgents().get(currentPosition.getPosx()).set(currentPosition.getPosy(),this);
+            grid.getAgents().get(oldPosition.getPosx()).set(oldPosition.getPosy(), null);
+            grid.getAgents().get(currentPosition.getPosx()).set(currentPosition.getPosy(), this);
         }
+
         setChanged();
         notifyObservers(this);
     }
@@ -250,7 +251,9 @@ public class Agent extends Observable implements Runnable {
 
                 nextPosition = new Position(x, y);
             }
-            while (nextPosition.equals(currentPosition));
+            while (nextPosition.equals(currentPosition) && !this.getGrid().isPositionAvailable(nextPosition));
+
+            System.out.println("current : " + currentPosition + " / nextPosition : " + nextPosition);
 
             return nextPosition;
         }

@@ -4,8 +4,6 @@ import agent_system.Agent;
 import environment.Grid;
 import environment.Position;
 import javafx.application.Application;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ObservableList;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -25,7 +23,7 @@ public class Main extends Application implements Observer {
     public void start(Stage primaryStage) throws Exception{
         primaryStage.setTitle("Hello World");
 
-        this.grid = new Grid(10, this);
+        this.grid = new Grid(5, this);
 
         // Création de la grille
         this.gridPane = createGrid();
@@ -41,7 +39,7 @@ public class Main extends Application implements Observer {
         primaryStage.setScene(scene);
         primaryStage.show();
 
-        createAgents(4);
+        createAgents(24);
         launchSimulation();
     }
 
@@ -115,7 +113,7 @@ public class Main extends Application implements Observer {
         }
     }
 
-    private synchronized String getEnvironmentString () {
+    private synchronized String getEnvironmentString (Grid grid) {
         try {
             List<String> environment = new ArrayList<>();
             for (int i = 0; i < grid.getWidth(); i++) {
@@ -169,45 +167,29 @@ public class Main extends Application implements Observer {
 
     @Override
     public void update(Observable o, Object arg) {
-        /*Agent agent = (Agent) arg;
-
-        // Je le supprime de son ancienne case
-        if (agent.getOldPosition() != null) {
-            Node agentOldCase = getNodeByRowColumnIndex(agent.getOldPosition().getPosx(), agent.getOldPosition().getPosy(), this.gridPane);
-            agentOldCase.setStyle("-fx-background-color: cell-border-color, cell-color ;\n" +
-                    "    -fx-background-insets: 0, 0 0 1 1 ;\n");
-
-            ObservableList<Node> child = ((StackPane)agentOldCase).getChildren();
-            Text text = (Text)child.get(0);
-            text.setText("");
-        }
-
-        // Je l'ajoute sur sa nouvelle case
-        Node agentNewCase = getNodeByRowColumnIndex(agent.getCurrentPosition().getPosx(), agent.getCurrentPosition().getPosy(), this.gridPane);
-        agentNewCase.setStyle("-fx-background-color: " + agent.getColor() + ";\n");
-
-        ObservableList<Node> child = ((StackPane)agentNewCase).getChildren();
-        Text text = (Text)child.get(0);
-        text.setText(String.valueOf(agent.getAgentId()));*/
-
         try {
-            final String stringEnvironment = getEnvironmentString();
+            /*Agent agent = (Agent) arg;
+            final String stringEnvironment = getEnvironmentString(agent.getGrid());
             final String[] tabEnvironment = stringEnvironment.split("/");
             int x = 0;
             int y = 0;
 
-            for (String caseEnvironment : tabEnvironment) {
-                int caseId = Integer.parseInt(caseEnvironment);
-
-                if (caseId == 0) {
-                    Node voidPosition = getNodeByRowColumnIndex(x, y, this.gridPane);
+            for (int k = 0; k < this.grid.getWidth(); k++) {
+                for (int l = 0; l < this.grid.getWidth(); l++) {
+                    Node voidPosition = getNodeByRowColumnIndex(k, l, this.gridPane);
                     voidPosition.setStyle("-fx-background-color: cell-border-color, cell-color ;\n" +
                             "    -fx-background-insets: 0, 0 0 1 1 ;\n");
 
                     ObservableList<Node> child = ((StackPane) voidPosition).getChildren();
                     Text text = (Text) child.get(0);
-                    text.setText("");
-                } else {
+                    text.setText(" ");
+                }
+            }
+
+            for (String caseEnvironment : tabEnvironment) {
+                int caseId = Integer.parseInt(caseEnvironment);
+
+                if (caseId != 0) {
                     Node agentPosition = getNodeByRowColumnIndex(x, y, this.gridPane);
                     agentPosition.setStyle("-fx-background-color: " + grid.getAgentById(caseId).getColor() + ";\n");
 
@@ -221,7 +203,26 @@ public class Main extends Application implements Observer {
                     y++;
                     x = 0;
                 }
+            }*/
+
+            Agent agent = (Agent) arg;
+
+            if (agent.getOldPosition() != null) {
+                Node voidPosition = getNodeByRowColumnIndex(agent.getOldPosition().getPosx(), agent.getOldPosition().getPosy(), this.gridPane);
+                voidPosition.setStyle("-fx-background-color: cell-border-color, cell-color ;\n" +
+                        "    -fx-background-insets: 0, 0 0 1 1 ;\n");
+
+                ObservableList<Node> child = ((StackPane) voidPosition).getChildren();
+                Text text = (Text) child.get(0);
+                text.setText(" ");
             }
+
+            Node agentPosition = getNodeByRowColumnIndex(agent.getCurrentPosition().getPosx(), agent.getCurrentPosition().getPosy(), this.gridPane);
+            agentPosition.setStyle("-fx-background-color: " + agent.getColor() + ";\n");
+
+            ObservableList<Node> child2 = ((StackPane) agentPosition).getChildren();
+            Text text2 = (Text) child2.get(0);
+            text2.setText("" + agent.getAgentId());
         }
         catch (Exception e) {
             e.printStackTrace();
