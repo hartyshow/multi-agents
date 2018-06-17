@@ -7,33 +7,43 @@ public class Message {
     private int id;
     private static int id_counter = 0;
 
-    private Agent sender;
-    private Agent receiver;
+    private int senderId;
+    private int receiverId;
     private Position desiredPosition;
 
-    public Message(Agent sender, Agent receiver, Position desiredPosition) {
+    public Message(int senderId, int receiverId, Position desiredPosition) {
         this.id = id_counter;
         id_counter++;
 
-        this.sender = sender;
-        this.receiver = receiver;
+        this.senderId = senderId;
+        this.receiverId = receiverId;
         this.desiredPosition = desiredPosition;
     }
 
-    public Agent getSender() {
-        return sender;
+    @Override
+    public String toString() {
+        return "Message{" +
+                "id=" + id +
+                ", senderId=" + senderId +
+                ", receiverId=" + receiverId +
+                ", desiredPosition=" + desiredPosition +
+                '}';
     }
 
-    public void setSender(Agent sender) {
-        this.sender = sender;
+    public int getSenderId() {
+        return senderId;
     }
 
-    public Agent getReceiver() {
-        return receiver;
+    public void setSenderId(int senderId) {
+        this.senderId = senderId;
     }
 
-    public void setReceiver(Agent receiver) {
-        this.receiver = receiver;
+    public int getReceiverId() {
+        return receiverId;
+    }
+
+    public void setReceiverId(int receiverId) {
+        this.receiverId = receiverId;
     }
 
     public Position getDesiredPosition() {

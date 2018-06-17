@@ -2,7 +2,9 @@ package agent_system;
 
 import environment.Grid;
 import environment.Position;
+import javafx.geometry.Pos;
 import javafx.scene.control.Alert;
+import sample.Main;
 
 import java.util.*;
 
@@ -11,23 +13,25 @@ public class Agent extends Observable implements Runnable {
     private int id;
     public static int compteurId = 0;
 
+    private Grid grid;
     private Position oldPosition;
     private Position currentPosition;
     private Position finalPosition;
-    private Grid grid;
     private String color;
 
     private boolean running = true;
 
     public Agent (Grid grille, Position initialPosition, Position finalPosition) {
         compteurId++;
-        this.grid = grille;
         this.id = compteurId;
+
+        this.grid = grille;
         this.finalPosition = finalPosition;
+
         Random rand = new Random();
         this.color = String.format("#%02x%02x%02x", rand.nextInt(250)+5, rand.nextInt(250)+5, rand.nextInt(250)+5);
 
-        addObserver(grid);
+        addObserver(grille);
         move(initialPosition);
         
     }
@@ -163,7 +167,7 @@ public class Agent extends Observable implements Runnable {
             neighbors.add(new Position(position.getPosx()-1,position.getPosy()));
         }
         // && grid.getAgents().get(position.getPosx()+1).get(position.getPosy()) == null
-        if(position.getPosx() != grid.getWidth()-1)
+        if(position.getPosx() != this.grid.getWidth()-1)
         {
             neighbors.add(new Position(position.getPosx()+1,position.getPosy()));
         }
@@ -173,7 +177,7 @@ public class Agent extends Observable implements Runnable {
             neighbors.add(new Position(position.getPosx(),position.getPosy()-1));
         }
         //&& grid.getAgents().get(position.getPosx()).get(position.getPosy()+1) == null
-        if(position.getPosy() != grid.getWidth()-1 )
+        if(position.getPosy() != this.grid.getWidth()-1 )
         {
             neighbors.add(new Position(position.getPosx(),position.getPosy()+1));
         }
@@ -184,25 +188,45 @@ public class Agent extends Observable implements Runnable {
     public void move(Position position) {
         this.oldPosition = this.currentPosition;
         this.currentPosition = position;
-        if (oldPosition != null && grid.getAgents().get(oldPosition.getPosx()).get(oldPosition.getPosy()).equals(this)) {
-            grid.getAgents().get(oldPosition.getPosx()).set(oldPosition.getPosy(), null);
-        }
-        grid.getAgents().get(currentPosition.getPosx()).set(currentPosition.getPosy(), this);
+
+        System.out.println(this);
+
         setChanged();
         notifyObservers(this);
     }
 
-    public void communicate(Agent receiver, Position desiredPosition) {
-        MessageBox.getInstance().postAgentMessage(new Message(this, receiver, desiredPosition));
+    public void communicate(int receiverId, Position desiredPosition) {
+        MessageBox.getInstance().postAgentMessage(new Message(this.getAgentId(), receiverId, desiredPosition));
     }
 
     public ArrayList<Message> getInboxMessages () {
         return MessageBox.getInstance().getAgentMessages(this.getAgentId());
     }
 
-    public void treatMessage(Message message) {
-        if (message.getDesiredPosition().equals(this.getCurrentPosition()))
-            move(getRandomMovement(this.getCurrentPosition()));
+    public void treatMessage(Message message) throws InterruptedException {
+        if (message.getDesiredPosition().equals(this.getCurrentPosition())) {
+            System.out.println("Agent " + this.getAgentId() + " : je vais bouger !");
+
+            Position nextPosition = getRandomMovement(this.getCurrentPosition());
+            if (this.grid.isPositionAvailable(nextPosition)) {
+                move(getRandomMovement(this.getCurrentPosition()));
+
+                // on attend histoire que l'autre puisse venir sur la case
+                Thread.sleep(200);
+            }
+            else {
+                Agent agent = this.grid.getAgentOnPosition(nextPosition);
+                if (agent != null && agent.getAgentId() != this.getAgentId()) {
+                    System.out.println("[treat] Agent : " + this.getAgentId() +
+                            " doit contacter : " + agent.getAgentId() +
+                            " pour la position : " + nextPosition);
+
+                    communicate(agent.getAgentId(), nextPosition);
+                }
+            }
+
+            System.out.println("Agent " + this.getAgentId() + " : j'ai bougé en " + this.getCurrentPosition());
+        }
 
         MessageBox.getInstance().deleteMessage(message.getId());
     }
@@ -214,6 +238,10 @@ public class Agent extends Observable implements Runnable {
 
             while (running) {
                 Thread.sleep(500);
+
+                if (this.grid.getAgents().size() != Main.NB_AGENTS) {
+                    System.out.println("mauvais nombre d'agents : " + this.grid.getAgents().size() + " / " + Main.NB_AGENTS);
+                }
 
                 // On récupère les messages
                 ArrayList<Message> messages = new ArrayList<>();
@@ -231,17 +259,21 @@ public class Agent extends Observable implements Runnable {
 
                 if(newPosition != null)
                 {
-
                     // Si la case est libre, on s'y déplace
                     if (this.grid.isPositionAvailable(newPosition))
                         move(newPosition);
 
-                        // Sinon, on demande à l'agent sur la case de se déplacer
+                    // Sinon, on demande à l'agent sur la case de se déplacer
                     else {
-                        Agent agent = grid.getAgentOnPosition(newPosition);
+                        Agent agent = this.grid.getAgentOnPosition(newPosition);
 
-                        if (agent != null)
-                            communicate(agent, newPosition);
+                        if (agent != null && agent.getAgentId() != this.getAgentId()) {
+                            System.out.println("Agent : " + this.getAgentId() +
+                                    " doit contacter : " + agent.getAgentId() +
+                                    " pour la position : " + newPosition);
+
+                            communicate(agent.getAgentId(), newPosition);
+                        }
                     }
                 }
 
@@ -260,42 +292,40 @@ public class Agent extends Observable implements Runnable {
         }
     }
 
-    public void stop()
-    {
-        this.running = false;
-    }
-
     public synchronized Position getRandomMovement (Position currentPosition) {
-        Random rand = new Random();
-        int x,y;
-        int chance = rand.nextInt(5);
-        Position nextPosition;
+        ArrayList<Position> positions = new ArrayList<>();
 
-        do {
-            if (chance == 0) {
-                x = currentPosition.getPosx() + 1 > grid.getWidth()-1 ? currentPosition.getPosx() : currentPosition.getPosx() + 1;
-                y = currentPosition.getPosy();
-            }
-            else if (chance == 1) {
-                x = currentPosition.getPosx() - 1 < 0 ? currentPosition.getPosx() : currentPosition.getPosx() - 1;
-                y = currentPosition.getPosy();
-            }
-            else if (chance == 2) {
-                x = currentPosition.getPosx();
-                y = currentPosition.getPosy() + 1 > grid.getWidth()-1 ? currentPosition.getPosy() : currentPosition.getPosy() + 1;
-            }
-            else {
-                x = currentPosition.getPosx();
-                y = currentPosition.getPosy() - 1 < 0 ? currentPosition.getPosy() : currentPosition.getPosy() - 1;
-            }
+        Position pos1 = new Position(currentPosition.getPosx() + 1 > this.grid.getWidth() - 1 ? currentPosition.getPosx() : currentPosition.getPosx() + 1, currentPosition.getPosy());
+        Position pos2 = new Position(currentPosition.getPosx() - 1 < 0 ? currentPosition.getPosx() : currentPosition.getPosx() - 1, currentPosition.getPosy());
+        Position pos3 = new Position(currentPosition.getPosx(), currentPosition.getPosy() + 1 > this.grid.getWidth() - 1 ? currentPosition.getPosy() : currentPosition.getPosy() + 1);
+        Position pos4 = new Position(currentPosition.getPosx(), currentPosition.getPosy() - 1 < 0 ? currentPosition.getPosy() : currentPosition.getPosy() - 1);
 
-            nextPosition = new Position(x, y);
+        if (!pos1.equals(this.getCurrentPosition()))
+            positions.add(pos1);
+        if (!pos2.equals(this.getCurrentPosition()))
+            positions.add(pos2);
+        if (!pos3.equals(this.getCurrentPosition()))
+            positions.add(pos3);
+        if (!pos4.equals(this.getCurrentPosition()))
+            positions.add(pos4);
+
+        if (positions.size() > 0) {
+            ArrayList<Position> positionsShuffle = new ArrayList(positions);
+            Collections.shuffle(positionsShuffle);
+
+            return positionsShuffle.get(0);
         }
-        while (nextPosition.equals(currentPosition) && !this.getGrid().isPositionAvailable(nextPosition));
+        else {
+            positions.add(pos1);
+            positions.add(pos2);
+            positions.add(pos3);
+            positions.add(pos4);
 
-        System.out.println("current : " + currentPosition + " / nextPosition : " + nextPosition);
+            ArrayList<Position> positionsShuffle = new ArrayList(positions);
+            Collections.shuffle(positionsShuffle);
 
-        return nextPosition;
+            return positionsShuffle.get(0);
+        }
     }
 
     public boolean goalReached () {
@@ -304,7 +334,7 @@ public class Agent extends Observable implements Runnable {
 
     @Override
     public String toString() {
-        return this.getAgentId() + " / oldPosition : " + this.getOldPosition() + " / currentPosition : " + this.getCurrentPosition();
+        return this.getAgentId() + " => [" + this.getCurrentPosition().getPosx() + "/" + this.getCurrentPosition().getPosy() + "]";
     }
 
     public int getAgentId() {
@@ -329,14 +359,6 @@ public class Agent extends Observable implements Runnable {
 
     public void setFinalPosition(Position finalPosition) {
         this.finalPosition = finalPosition;
-    }
-
-    public Grid getGrid() {
-        return grid;
-    }
-
-    public void setGrid(Grid grid) {
-        this.grid = grid;
     }
 
     public Position getOldPosition() {

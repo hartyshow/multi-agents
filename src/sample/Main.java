@@ -21,15 +21,16 @@ public class Main extends Application implements Observer {
     private Grid grid;
     private GridPane gridPane;
     private StackPane root;
+    private boolean finished = false;
 
-    public final int nbAgents = 20;
-    public final int gridWidth = 10;
+    public static final int NB_AGENTS = 30;
+    public static final int GRID_WIDTH = 10;
 
     @Override
     public void start(Stage primaryStage) throws Exception{
         primaryStage.setTitle("Hello World");
 
-        this.grid = new Grid(gridWidth, this);
+        this.grid = new Grid(GRID_WIDTH, this);
 
         // Création de la grille
         this.gridPane = createGrid();
@@ -45,7 +46,7 @@ public class Main extends Application implements Observer {
         primaryStage.setScene(scene);
         primaryStage.show();
 
-        createAgents(nbAgents);
+        createAgents(NB_AGENTS);
         launchSimulation();
     }
 
@@ -89,7 +90,7 @@ public class Main extends Application implements Observer {
         return gridPane;
     }
 
-    private void createAgents(int nbAgent) {
+    private void createAgents(int nbAgent) throws InterruptedException {
         Random rand = new Random();
         Position currentPosition;
         Position finalPosition;
@@ -110,15 +111,6 @@ public class Main extends Application implements Observer {
         }
     }
 
-    private void printEnvironmentInConsole() {
-        for (ArrayList<Agent> agents : grid.getAgents()) {
-            for (Agent agent : agents) {
-                System.out.print(agent == null ? " 0 " : " "+agent.getAgentId()+" ");
-            }
-            System.out.println("");
-        }
-    }
-
     private synchronized String getEnvironmentString (Grid grid) {
         try {
             List<String> environment = new ArrayList<>();
@@ -128,11 +120,9 @@ public class Main extends Application implements Observer {
                 }
             }
 
-            for (ArrayList<Agent> agents : grid.getAgents()) {
-                for (Agent agent : agents) {
-                    if (agent != null)
-                        environment.set(agent.getCurrentPosition().getPosy() * (grid.getWidth()) + agent.getCurrentPosition().getPosx(), String.valueOf(agent.getAgentId()));
-                }
+            for (Agent agent : this.grid.getAgents()) {
+                if (agent != null)
+                    environment.set(agent.getCurrentPosition().getPosy() * (grid.getWidth()) + agent.getCurrentPosition().getPosx(), String.valueOf(agent.getAgentId()));
             }
 
             String environmentString = "";
@@ -187,7 +177,7 @@ public class Main extends Application implements Observer {
                     text.setText(" ");
                 }*/
 
-                final String stringEnvironment = getEnvironmentString(agent.getGrid());
+                final String stringEnvironment = getEnvironmentString(grid);
                 final String[] tabEnvironment = stringEnvironment.split("/");
                 int x = 0;
                 int y = 0;
@@ -205,15 +195,13 @@ public class Main extends Application implements Observer {
                         text.setText(" ");
                     } else {
                         Node agentPosition = getNodeByRowColumnIndex(x, y, this.gridPane);
-                        if (agent != null) {
-                            //System.out.println("agent : " + (agent == null) + " / agent.getGrid() : " + (agent.getGrid() == null) + " / agent.getGrid().getAgentById(caseId) : " + (agent.getGrid().getAgentById(caseId) == null) + " / agent.getGrid().getAgentById(caseId).getColor() : " + (agent.getGrid().getAgentById(caseId).getColor() == null));
-                            agentPosition.setStyle("-fx-background-color: black, " + agent.getGrid().getAgentById(caseId).getColor() + ";\n" +
-                                    "    -fx-background-insets: 0, 0 0 1 1 ;");
+                        agentPosition.setStyle("-fx-background-color: black, " +
+                                grid.getAgentById(caseId).getColor() + ";\n" +
+                                "    -fx-background-insets: 0, 0 0 1 1 ;");
 
-                            ObservableList<Node> child = ((StackPane) agentPosition).getChildren();
-                            Text text = (Text) child.get(0);
-                            text.setText("" + caseId);
-                        }
+                        ObservableList<Node> child = ((StackPane) agentPosition).getChildren();
+                        Text text = (Text) child.get(0);
+                        text.setText("" + caseId);
                     }
 
                     x++;
@@ -224,20 +212,23 @@ public class Main extends Application implements Observer {
                 }
             }
             else {
-                //this.grid.stopSimulation();
-                Platform.runLater(() -> {
-                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                    alert.setTitle("Simulation completed !");
-                    alert.setHeaderText(null);
-                    alert.setContentText("Simulation successfully completed !");
+                if (!finished) {
+                    finished = true;
+                    //this.grid.stopSimulation();
+                    Platform.runLater(() -> {
+                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                        alert.setTitle("Simulation completed !");
+                        alert.setHeaderText(null);
+                        alert.setContentText("Simulation successfully completed !");
 
-                    Optional<ButtonType> option = alert.showAndWait();
+                        Optional<ButtonType> option = alert.showAndWait();
 
-                    if (option.get() == ButtonType.OK) {
-                        Platform.exit();
-                        System.exit(0);
-                    }
-                });
+                        if (option.get() == ButtonType.OK) {
+                            Platform.exit();
+                            System.exit(0);
+                        }
+                    });
+                }
             }
         }
         catch (Exception e) {

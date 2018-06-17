@@ -9,105 +9,79 @@ import java.util.Observer;
 
 public class Grid extends Observable implements Observer{
 
-    private Main main;
     private int width;
-    private ArrayList<ArrayList<Agent>> agents;
+    private static ArrayList<Agent> agents;
 
-    public Grid(int width, Main main) {
-        this.main = main;
-
+    public Grid (int width, Main main) {
         this.width = width;
         this.agents = new ArrayList<>();
-
-        ArrayList<Agent> bidon = new ArrayList<>();
-        for (int j = 0; j < width; j++) {
-            bidon.add(null);
-        }
-
-        for(int i=0; i < width; i++)
-        {
-            this.agents.add(new ArrayList<>(bidon));
-        }
 
         addObserver(main);
     }
 
-    public void addAgent (Agent agent) {
-        agents.get(agent.getCurrentPosition().getPosx()).set(agent.getCurrentPosition().getPosy(), agent);
+    public synchronized void addAgent (Agent agent) {
+        this.agents.add(agent);
 
-        setChanged();
-        notifyObservers(agent);
+        if (this.agents.size() == Main.NB_AGENTS) {
+            setChanged();
+            notifyObservers(agent);
+        }
     }
 
     public boolean goalReached () {
-        for (ArrayList<Agent> arrayAgents : agents) {
-            for (Agent agent : arrayAgents) {
-                if (agent != null && !agent.goalReached())
-                    return false;
-            }
+        for (Agent agent : this.agents) {
+            if (agent != null && !agent.goalReached())
+                return false;
         }
 
         return true;
     }
 
     public synchronized boolean isPositionAvailable(Position position) {
-        for (ArrayList<Agent> arrayAgents : agents) {
-            for (Agent agent : arrayAgents) {
-                if (agent != null && agent.getCurrentPosition().equals(position))
-                    return false;
-            }
+        //System.out.println("agents : " + this.agents);
+        boolean available = true;
+
+        for (Agent agent : this.agents) {
+            if (agent != null && agent.getCurrentPosition().equals(position))
+                available = false;
         }
 
-        return true;
+        //System.out.println("position : " + position + " available ? " + available);
+        return available;
     }
 
     public synchronized boolean isFinalPositionAvailable(Position position) {
-        for (ArrayList<Agent> arrayAgents : agents) {
-            for (Agent agent : arrayAgents) {
-                if (agent != null && agent.getFinalPosition().equals(position))
-                    return false;
-            }
+        for (Agent agent : this.agents) {
+            if (agent != null && agent.getFinalPosition().equals(position))
+                return false;
         }
 
         return true;
     }
 
     public void launchSimulation() {
-        for (ArrayList<Agent> arrayAgents : agents) {
-            for (Agent agent : arrayAgents) {
-                if (agent != null)
-                    new Thread(agent).start();
-            }
-        }
-    }
-
-    public void stopSimulation()
-    {
-        for (ArrayList<Agent> arrayAgents : agents) {
-            for (Agent agent : arrayAgents) {
-                if (agent != null)
-                    agent.stop();
-            }
+        for (Agent agent : this.agents) {
+            if (agent != null)
+                new Thread(agent).start();
         }
     }
 
     public Agent getAgentById (int id) {
-        for (ArrayList<Agent> arrayAgents : agents) {
-            for (Agent agent : arrayAgents) {
-                if (agent != null && agent.getAgentId() == id)
-                    return agent;
-            }
+        for (Agent agent : this.agents) {
+            if (agent != null && agent.getAgentId() == id)
+                return agent;
         }
+
+        System.out.println("pas trouvé : " + id);
+        System.out.println("liste : " + this.agents);
 
         return null;
     }
 
     public synchronized Agent getAgentOnPosition (Position position) {
-        for (ArrayList<Agent> arrayAgents : agents) {
-            for (Agent agent : arrayAgents) {
-                if (agent != null && agent.getCurrentPosition().equals(position))
-                    return agent;
-            }
+        for (Agent agent : agents) {
+            if (agent != null && agent.getCurrentPosition().equals(position))
+                return agent;
         }
 
         return null;
@@ -121,11 +95,11 @@ public class Grid extends Observable implements Observer{
         this.width = width;
     }
 
-    public synchronized ArrayList<ArrayList<Agent>> getAgents() {
-        return agents;
+    public ArrayList<Agent> getAgents() {
+        return this.agents;
     }
 
-    public void setAgents(ArrayList<ArrayList<Agent>> agents) {
+    public void setAgents(ArrayList<Agent> agents) {
         this.agents = agents;
     }
 
